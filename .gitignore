@@ -12,3 +12,6 @@
 .DS_Store
 .Rproj.user
 inst/doc
+
+# misc. test files
+tests/tests-cv
