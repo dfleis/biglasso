@@ -518,3 +518,37 @@ RcppExport SEXP get_eta(SEXP xP, SEXP row_idx_, SEXP beta, SEXP idx_p, SEXP idx_
   return __sexp_result;
   END_RCPP
 }
+
+// // [[Rcpp::export]] 
+// RcppExport SEXP loglike_cox(SEXP xP, SEXP row_idx_, SEXP beta, SEXP d_, SEXP idx_p, SEXP idx_l) {
+//   BEGIN_RCPP
+//   SEXP __sexp_result;
+//   {
+//     Rcpp::RNGScope __rngScope;
+//     XPtr<BigMatrix> xpMat(xP); //convert to big.matrix pointer;
+//     MatrixAccessor<double> xAcc(*xpMat);
+//     
+//     // sparse matrix for beta: only pass the non-zero entries and their indices;
+//     arma::sp_mat sp_beta = Rcpp::as<arma::sp_mat>(beta);
+//     
+//     IntegerVector d(d_); // counts of unique failure times
+//     IntegerVector row_idx(row_idx_);
+//     IntegerVector index_p(idx_p);
+//     IntegerVector index_l(idx_l);
+//     
+//     int nd  = d.size();
+//     int l   = sp_beta.n_cols;
+//     int nnz = index_p.size();
+//     
+//     NumericVector loglik(l);
+//     
+//     for (int j = 0; j < nd; j++) {
+//       
+//     }
+//    
+//    PROTECT(__sexp_result = Rcpp::wrap(loglik));
+//   }
+//   UNPROTECT(1);
+//   return __sexp_result;
+//   END_RCPP
+// }

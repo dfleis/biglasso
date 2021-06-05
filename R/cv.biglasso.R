@@ -78,7 +78,7 @@ cv.biglasso <- function(X, y, row.idx = 1:nrow(X),
                         nfolds = 5, seed, cv.ind, trace = FALSE) {
   
   family <- match.arg(family)
-  if(!family %in% c("gaussian", "binomial")) stop("CV method for this family not supported yet.")
+  if(!family %in% c("gaussian", "binomial", "cox")) stop("CV method for this family not supported yet.")
   
   #TODO: 
   #   system-specific parallel: Windows parLapply; others: mclapply
@@ -196,11 +196,16 @@ cvf <- function(i, XX, y, eval.metric, cv.ind, cv.args, parallel= FALSE) {
   idx.test <- which(cv.ind == i)
   fit.i <- do.call("biglasso", cv.args)
 
-  y2 <- y[cv.ind==i]
-  yhat <- matrix(predict(fit.i, XX, row.idx = idx.test, type="response"), length(y2))
-
-  loss <- loss.biglasso(y2, yhat, fit.i$family, eval.metric = eval.metric)
-
+  if (fit.i$family == "cox") {
+    
+    #plfull <- TO DO...
+    
+  } else {
+    y2 <- y[cv.ind==i]
+    yhat <- matrix(predict(fit.i, XX, row.idx = idx.test, type="response"), length(y2))
+    loss <- loss.biglasso(y2, yhat, fit.i$family, eval.metric = eval.metric)
+  } 
+  
   pe <- if (fit.i$family=="binomial") {(yhat < 0.5) == y2} else NULL
   list(loss=loss, pe=pe, nl=length(fit.i$lambda), yhat=yhat)
 }
