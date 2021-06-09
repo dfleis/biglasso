@@ -27,19 +27,6 @@ lapply(list.files("../cv-biglasso-cox/R/", full.names = T), source)
 
 ### RUN CROSS-VALIDATED MODELS
 pt <- proc.time()
-cv.bl <- cv.biglasso(X       = Xbig,                               
-                     y       = y,
-                     family  = "cox",
-                     penalty = penalty,
-                     alpha   = alpha,
-                     nfolds  = nfolds,
-                     lambda  = lambda,
-                     grouped = grouped,
-                     ncores  = 1,
-                     trace   = as.logical(trace.it))
-proc.time() - pt
-
-pt <- proc.time()
 cv.blR <- cv.biglasso.cox(x        = Xbig,
                           y        = y,
                           penalty  = penalty,
@@ -49,6 +36,23 @@ cv.blR <- cv.biglasso.cox(x        = Xbig,
                           grouped  = grouped,
                           parallel = parallel)
 proc.time() - pt
+
+
+
+pt <- proc.time()
+cv.bl <- cv.biglasso(X       = Xbig,                               
+                     y       = y,
+                     family  = "cox",
+                     penalty = penalty,
+                     alpha   = alpha,
+                     nfolds  = nfolds,
+                     lambda  = lambda,
+                     grouped = grouped,
+                     ncores  = 1,
+                     trace   = as.logical(trace.it),
+                     cv.ind  = cv.blR$foldid)
+proc.time() - pt
+
 
 
 pt <- proc.time()

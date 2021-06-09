@@ -234,7 +234,7 @@ cvf <- function(i, XX, y, eval.metric, cv.ind, cv.args, grouped, parallel=FALSE)
     wt <- sum(y[idx.test, 2]) # NOTE: If all obs. are censored in a test set then this will lead to a div by zero
     if (grouped) { # "V&VH cross-validation error" (default setting in glmnet)
       plfull   <- cox.deviance(X = XX, y = y, beta = fit.i$beta, row.idx = 1:nrow(y))
-      plminusk <- cox.deviance(X = XX, y = y, beta = fit.i$beta, row.idx = idx.test)
+      plminusk <- cox.deviance(X = XX, y = y, beta = fit.i$beta, row.idx = which(cv.ind != i))
       loss <- (plfull$dev - plminusk$dev)/wt
     } else { # "basic cross-validation error" (alternative setting in glmnet)
       plk <- cox.deviance(X = XX, y = y, beta = fit.i$beta, row.idx = idx.test)
