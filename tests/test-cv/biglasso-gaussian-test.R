@@ -3,8 +3,8 @@ library(glmnet)
 
 ########### genmerate data
 set.seed(124)
-n <- 5000
-p <- 100
+n <- 100
+p <- 25
 psparse <- 0.5
 sigma <- 1
 
@@ -17,29 +17,29 @@ y <- X %*% beta + eps
 
 ########### model parameters
 alpha  <- 0.5
-lambda <- exp(seq(-2, -6, length.out = 100))
+lambda <- exp(seq(-2, -6, length.out = 7))
 nfolds <- 5
 
-#### raw fits
-pt <- proc.time()
-fit.bl <- biglasso(X = Xbig,
-                   y = y,
-                   family  = "gaussian",
-                   penalty = "enet",
-                   alpha   = alpha,
-                   lambda  = lambda)
-proc.time() - pt
-
-pt <- proc.time()
-fit.gn <- glmnet(x = X[,-1],
-                 y = y,
-                 family  = "gaussian",
-                 alpha   = alpha,
-                 lambda  = lambda)
-proc.time() - pt
-
-beta.bl <- as.matrix(fit.bl$beta)
-beta.gn <- rbind(fit.gn$a0, as.matrix(fit.gn$beta))
+# #### raw fits
+# pt <- proc.time()
+# fit.bl <- biglasso(X = Xbig,
+#                    y = y,
+#                    family  = "gaussian",
+#                    penalty = "enet",
+#                    alpha   = alpha,
+#                    lambda  = lambda)
+# proc.time() - pt
+# 
+# pt <- proc.time()
+# fit.gn <- glmnet(x = X[,-1],
+#                  y = y,
+#                  family  = "gaussian",
+#                  alpha   = alpha,
+#                  lambda  = lambda)
+# proc.time() - pt
+# 
+# beta.bl <- as.matrix(fit.bl$beta)
+# beta.gn <- rbind(fit.gn$a0, as.matrix(fit.gn$beta))
 
 
 

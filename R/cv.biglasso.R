@@ -197,16 +197,9 @@ cvf <- function(i, XX, y, eval.metric, cv.ind, cv.args, parallel= FALSE) {
   idx.test <- which(cv.ind == i)
   fit.i <- do.call("biglasso", cv.args)
 
-  if (fit.i$family == "cox") {
-    #plfull   <- cox.deviance(X = XX, y = y, beta = fit.i$beta, row.idx = 1:nrow(y))
-    #plminusk <- cox.deviance(X = XX, y = y, beta = fit.i$beta, row.idx = idx.test)
-    #loss <- plfull - plminusk
-    
-  } else {
-    y2 <- y[cv.ind==i]
-    yhat <- matrix(predict(fit.i, XX, row.idx = idx.test, type="response"), length(y2))
-    loss <- loss.biglasso(y2, yhat, fit.i$family, eval.metric = eval.metric)
-  } 
+  y2 <- y[cv.ind==i]
+  yhat <- matrix(predict(fit.i, XX, row.idx = idx.test, type="response"), length(y2))
+  loss <- loss.biglasso(y2, yhat, fit.i$family, eval.metric = eval.metric)
   
   pe <- if (fit.i$family=="binomial") {(yhat < 0.5) == y2} else NULL
   list(loss=loss, pe=pe, nl=length(fit.i$lambda), yhat=yhat)
