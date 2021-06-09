@@ -10,6 +10,7 @@ cv.biglasso(
   row.idx = 1:nrow(X),
   family = c("gaussian", "binomial", "cox", "mgaussian"),
   eval.metric = c("default", "MAPE"),
+  grouped = TRUE,
   ncores = parallel::detectCores(),
   ...,
   nfolds = 5,
@@ -35,6 +36,13 @@ are not supported yet.}
 for choosing optimal \code{lambda}. "default" for linear regression is MSE
 (mean squared error), for logistic regression is misclassification error.
 "MAPE", for linear regression only, is the Mean Absolute Percentage Error.}
+
+\item{grouped}{Currently is only applicable to Cox models, otherwise ignored.
+Mirrors the \code{grouped} parameter used by \code{glmnet}. If \code{grouped}=TRUE 
+then the partial likelihood for the K-th fold is calculated by subtracting
+the (log) partial likelihood evaluated on the full data set from the 
+partial likelihood evaluated on (K-1)/K data set. If \code{grouped}=FALSE
+then the partial likelihood is computed only on the K-th fold.}
 
 \item{ncores}{The number of cores to use for parallel execution across a
 cluster created by the \code{parallel} package. (This is different from
