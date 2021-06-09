@@ -22,22 +22,20 @@ parallel <- F # "use parallel  to fit each fold. Must register parallel before h
 trace.it <- 1
 
 
-lapply(list.files("../cv-biglasso-cox/R/", full.names = T), source)
-
-
-### RUN CROSS-VALIDATED MODELS
-pt <- proc.time()
-cv.blR <- cv.biglasso.cox(x        = Xbig,
-                          y        = y,
-                          penalty  = penalty,
-                          alpha    = alpha,
-                          lambda   = lambda,
-                          nfolds   = nfolds,
-                          grouped  = grouped,
-                          parallel = parallel)
-proc.time() - pt
-
-
+# lapply(list.files("../cv-biglasso-cox/R/", full.names = T), source)
+# 
+# 
+# ### RUN CROSS-VALIDATED MODELS
+# pt <- proc.time()
+# cv.blR <- cv.biglasso.cox(x        = Xbig,
+#                           y        = y,
+#                           penalty  = penalty,
+#                           alpha    = alpha,
+#                           lambda   = lambda,
+#                           nfolds   = nfolds,
+#                           grouped  = grouped,
+#                           parallel = parallel)
+# proc.time() - pt
 
 pt <- proc.time()
 cv.bl <- cv.biglasso(X       = Xbig,                               
@@ -69,7 +67,8 @@ cv.gn <- cv.glmnet(x        = X,
 proc.time() - pt
 
 
+#plot.cv.biglasso.cox(cv.blR)
+#plot.compare.cv(cv.blR, cv.gn)
+
 plot(cv.bl)
-plot.cv.biglasso.cox(cv.blR)
 plot(cv.gn)
-plot.compare.cv(cv.blR, cv.gn)
