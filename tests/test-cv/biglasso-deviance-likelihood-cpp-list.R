@@ -2,11 +2,12 @@ library(bigmemory)
 library(glmnet)
 library(biglasso)
 library(survival)
+library(Rcpp)
 
 set.seed(124)
 ### GENERATE DATA 
-no <- 5000
-nx <- 20
+no <- 1000
+nx <- 15
 dat <- coxed::sim.survdata(N = no, xvars = nx)
 X <- as.matrix(dat$xdata)
 y <- cbind("time" = as.numeric(dat$data$y), "status" = dat$data$failed)
@@ -35,7 +36,7 @@ penalty <- "enet"
 lambda  <- exp(seq(-1, -6, length.out = 100)) #c(0.1, 0.01)
 
 ##### FIT MODELS
-fit.cx <- coxph(Surv(y) ~ X, ties = "breslow")
+#fit.cx <- coxph(Surv(y) ~ X, ties = "breslow")
 fit.bl <- biglasso(X = Xbig, y = y, family = "cox", penalty = penalty, alpha = alpha, lambda = lambda)
 fit.gn <- glmnet(x = X, y = y, family = "cox", alpha = alpha, lambda = lambda)
 
@@ -43,7 +44,7 @@ beta.cx <- coef(fit.cx)
 beta.bl <- as.matrix(fit.bl$beta)
 beta.gn <- as.matrix(fit.gn$beta)
 
-beta <- beta.gn # used later when I try to reconstruct the deviance/likelihood values  
+beta <- beta.bl # used later when I try to reconstruct the deviance/likelihood values  
 
 ##### likelihoods
 d <- as.numeric(table(y[y[,2]==1,1])) # counts of unique failure times for all uncensored obs. (y[,2] == 1)
@@ -57,7 +58,7 @@ dev.bl <- fit.bl$loss
 dev.gn <- (1 - fit.gn$dev.ratio) * fit.gn$nulldev
 dev.gn.null <- fit.gn$nulldev # defined as 2 * (ll_sat - ll_null)
 
-
+pt <- proc.time()
 tOrder <- order(y[,1]) # indices of sorted times
 d <- as.numeric(table(y[y[,2]==1,1])) # counts of unique failure times for all uncensored obs. (y[,2] == 1)
 dtime <- sort(unique(y[y[,2]==1,1]))  # sorted unique failure times for all uncensored obs.
@@ -72,57 +73,125 @@ for(i in 1:length(row.idx.cox)) d_idx[i] <- max(which(dtime <= y[tOrder[row.idx.
   
 tOrig <- order(tOrder) # map from the sorted times back to the original time ordering
 d_idx2 <- c(rep(-999, length(tOrder) - length(row.idx.cox)), d_idx) # unbelievably hacky solution to omitting any censored times occuring before the first uncensored one
-  
-### LOGLIKELIHOODS & DEVIANCES
+
+###### manual tests 
 ll.sat <- -sum(d * log(d))
-  
+
+D_R_sets <- lapply(1:length(d), function(j) { 
+  # NOTE: structure is slightly different in the cox.deviance function
+  # so that it's more amenable to passing it to C++, i.e.
+  # indexes starting at 0, unnecessary inclusion of d[j].
+  Dj <- d_idx2 == j
+  Dj <- Dj[tOrig] & y[,2]
+  Rj <- (y[,1] >= y[Dj,1][1])
+  list("Dj" = as.integer(which(Dj)), 
+       "Rj" = as.integer(which(Rj)),
+       "dj" = d[j]) 
+})
+
+ll.list <- sapply(D_R_sets, function(DRs) {
+  term1 <- colSums(X[DRs$Dj,,drop=F]) %*% beta
+  term2 <- DRs$d * log(colSums(exp(X[DRs$Rj,,drop=F] %*% beta)))
+  term1 - term2
+})
+ll <- rowSums(ll.list)
+D <- -2 * (ll - ll.sat)
+proc.time() - pt
+
+###### SEPARATE LOGLIKELIHOOD/DEVIANCES FUNCTIONS
+idx <- 1:nrow(y)
+
+pt <- proc.time()
+out <- cox.deviance(X = Xbig, y = y, beta = fit.bl$beta, row.idx = idx)
+proc.time() - pt
+
+pt <- proc.time()
+out.gn <- glmnet::coxnet.deviance(y = y[idx,], x = X[idx,], beta = fit.bl$beta)
+proc.time() - pt
+
+
+plot(out.gn ~ lambda, log = 'x', type = 'l', lwd = 2)
+lines(out$D ~ lambda, lwd = 2, col = 'red')
+lines(D ~ lambda, lwd = 2, col = 'blue')
+plot((out$D - out.gn)/out$D ~ lambda, log = 'x', type = 'l')
+plot((out$D - D)/out$D ~ lambda, log = 'x', type = 'l')
+
+
+
+
+
+
+
+cppFunction(depends = "RcppArmadillo", "
+SEXP fx(SEXP M) {
+  arma::mat m = Rcpp::as<arma::mat>(M);
+  arma::mat colsum = arma::sum(m, 0);
+  return List::create(colsum);
+}
+")
+A <- matrix(rnorm(4 * 3), nrow = 4)
+colSums(A)
+fx(A)
+
+Amat <- as.matrix(A)
+matrix(1, ncol = nrow(Amat)) %*% Amat 
+colSums(Amat)
+
+cppFunction(plugins = "type_info", "
+void printClass(SEXP x) {
+  std::cout << \"hello, world!\" << std::endl; 
+  //std::cout << x << std::endl;  
+}
+")
+printClass(1)
+
+#sourceCpp("tests/test-cpp/test-cpp.cpp")
+cppFunction(depends = "RcppArmadillo", "
+SEXP fx() {
+  arma::mat Z = arma::zeros(3, 10);
+  Z(0, 5) = 1.0;
+  return List::create(Z);
+}
+")
+fx()
+
+cppFunction(depends = "RcppArmadillo", "
+SEXP fx(SEXP M, double x) {
+  arma::mat m = Rcpp::as<arma::mat>(M);
+  return List::create(x * m);
+}
+")
+X <- matrix(runif(4 * 3), nrow = 4)
+3.1 * X
+fx(X, 3.1)
+
+cppFunction(depends = "RcppArmadillo", "
+void fx(SEXP M) {
+  arma::mat m = Rcpp::as<arma::mat>(M);
+  m.print();
+}
+")
+v <- matrix(rnorm(4 * 3), nrow = 4)
+v
+fx(v)
+
+################ manual tests 
+ll.sat <- -sum(d * log(d))
+
 D_R_sets <- lapply(1:length(d), function(j) {
   Dj <- d_idx2 == j
   Dj <- Dj[tOrig] & y[,2]
   Rj <- (y[,1] >= y[Dj,1][1])
-  list("Dj" = as.integer(which(Dj) - 1), 
-       "Rj" = as.integer(which(Rj) - 1))
+  list("Dj" = as.integer(which(Dj)), 
+       "Rj" = as.integer(which(Rj)))
 })
-  
-cppFunction("
-  SEXP loglik_cox(SEXP xP, SEXP beta_, SEXP D_R_sets_, SEXP d_) {
-    // TODO: 
-    //   swap to bigmatrix for xP
-    //   swap to sparse matrix for beta
-    Rcpp::List D_R_sets(D_R_sets_);
-    int *d = INTEGER(d_); 
-    Rcpp::List DRs(2);
-
-    int nd = D_R_sets.size();
-    int dj;
-    
-    for (int j = 0; j < nd; j++) {
-      Rprintf(\"j = %i\\n\", j);
-      DRs = D_R_sets[j];
-      Rcpp::IntegerVector Dj = DRs[\"Dj\"];
-      Rcpp::IntegerVector Rj = DRs[\"Rj\"];
-      //Rprintf(\"dj = %i\\n\", *(d+j));
-      Rprintf(\"Rj.size() = %i\\n\", Rj.size());
-    }
-    
-    return List::create(1);
-  }
-")
-
-loglik_cox(X, beta, D_R_sets, as.integer(d))
 
 
-
-
-
-
-
-  ll.list <- sapply(D_R_sets, function(DRs) {
-    term1 <- colSums(X[DRs$Dj,,drop=F]) %*% beta
-    term2 <- DRs$d * log(colSums(exp(X[DRs$Rj,,drop=F] %*% beta)))
-    term1 - term2
-  })
-  
+ll.list <- sapply(D_R_sets, function(DRs) {
+  term1 <- colSums(X[DRs$Dj,,drop=F]) %*% beta
+  term2 <- DRs$d * log(colSums(exp(X[DRs$Rj,,drop=F] %*% beta)))
+  term1 - term2
+})
 D <- -2 * (rowSums(ll.list) - ll.sat)
   
 ll.null <- 0

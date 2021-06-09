@@ -1,4 +1,3 @@
-
 // #include <math.h>
 // #include <string.h>
 // #include <R.h>
@@ -34,7 +33,7 @@ double sum(double *x, int n);
 
 // Sum of squares of jth column of X
 double sqsum(double *X, int n, int j);
- 
+
 double crossprod(double *X, double *y, int n, int j);
 
 int sum(int *vec, int p);
@@ -132,5 +131,12 @@ void update_zj(vector<double> &z,
                XPtr<BigMatrix> xpMat, int *row_idx,vector<int> &col_idx,
                NumericVector &center, NumericVector &scale, 
                double sumResid, double *r, double *m, int n, int p);
+
+arma::mat get_eta2(MatrixAccessor<double> xAcc, IntegerVector row_idx, IntegerVector set_idx,
+                   arma::sp_mat sp_beta, IntegerVector index_p, IntegerVector index_l, 
+                   int n, int l, int nnz);
+
+arma::mat colsum(MatrixAccessor<double> xAcc, IntegerVector row_idx, IntegerVector set_idx, int ncols);
+
 
 #endif

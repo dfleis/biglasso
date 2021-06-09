@@ -5,3 +5,7 @@ get_eta <- function(xP, row_idx_, beta, idx_p, idx_l) {
     .Call(`_biglasso_get_eta`, xP, row_idx_, beta, idx_p, idx_l)
 }
 
+loglik_cox <- function(xP, row_idx_, beta, idx_p, idx_l, D_R_sets_, d_) {
+    .Call(`_biglasso_loglik_cox`, xP, row_idx_, beta, idx_p, idx_l, D_R_sets_, d_)
+}
+

@@ -519,36 +519,87 @@ RcppExport SEXP get_eta(SEXP xP, SEXP row_idx_, SEXP beta, SEXP idx_p, SEXP idx_
   END_RCPP
 }
 
-// // [[Rcpp::export]] 
-// RcppExport SEXP loglike_cox(SEXP xP, SEXP row_idx_, SEXP beta, SEXP d_, SEXP idx_p, SEXP idx_l) {
-//   BEGIN_RCPP
-//   SEXP __sexp_result;
-//   {
-//     Rcpp::RNGScope __rngScope;
-//     XPtr<BigMatrix> xpMat(xP); //convert to big.matrix pointer;
-//     MatrixAccessor<double> xAcc(*xpMat);
-//     
-//     // sparse matrix for beta: only pass the non-zero entries and their indices;
-//     arma::sp_mat sp_beta = Rcpp::as<arma::sp_mat>(beta);
-//     
-//     IntegerVector d(d_); // counts of unique failure times
-//     IntegerVector row_idx(row_idx_);
-//     IntegerVector index_p(idx_p);
-//     IntegerVector index_l(idx_l);
-//     
-//     int nd  = d.size();
-//     int l   = sp_beta.n_cols;
-//     int nnz = index_p.size();
-//     
-//     NumericVector loglik(l);
-//     
-//     for (int j = 0; j < nd; j++) {
-//       
-//     }
-//    
-//    PROTECT(__sexp_result = Rcpp::wrap(loglik));
-//   }
-//   UNPROTECT(1);
-//   return __sexp_result;
-//   END_RCPP
-// }
+// internal equivalent to the get_eta function
+arma::mat get_eta2(MatrixAccessor<double> xAcc, IntegerVector row_idx, IntegerVector set_idx, 
+                   arma::sp_mat sp_beta, IntegerVector index_p, IntegerVector index_l, 
+                   int n, int l, int nnz) {
+  // initialize result
+  arma::mat res = arma::zeros(n, l);
+
+  for (int k = 0; k < nnz; k++) {
+    for (int i = 0; i < n; i++) {
+      //double x = (xAcc[index_p[k]][row_idx[i]] - center[index_p[k]]) / scale[index_p[k]];
+      // NOTE: beta here is unstandardized; so no need to standardize x
+      double x = xAcc[index_p[k]][row_idx[set_idx[i]]];
+      res(i, index_l[k]) += x * sp_beta(index_p[k], index_l[k]);
+    }
+  }
+  
+  return res;
+}
+
+arma::mat colsum(MatrixAccessor<double> xAcc, IntegerVector row_idx, IntegerVector set_idx, int ncols) {
+  arma::mat res = arma::zeros(1, ncols);
+  for (int j = 0; j < ncols; j++) {
+    for (int i = 0; i < set_idx.size(); i++) {
+      res(0,j) += xAcc[j][row_idx[set_idx[i]]];
+    }
+  }
+  return res;
+}
+
+// [[Rcpp::export]]
+SEXP loglik_cox(SEXP xP, SEXP row_idx_, SEXP beta, SEXP idx_p, SEXP idx_l, SEXP D_R_sets_, SEXP d_) {
+  //BEGIN_RCPP
+  //SEXP __sexp_result;
+  //{
+  //  Rcpp::RNGScope __rngScope;  
+    XPtr<BigMatrix> xpMat(xP); //convert to big.matrix pointer;
+    MatrixAccessor<double> xAcc(*xpMat);
+    
+    arma::sp_mat sp_beta = Rcpp::as<arma::sp_mat>(beta);
+    
+    IntegerVector row_idx(row_idx_);
+    IntegerVector index_p(idx_p);
+    IntegerVector index_l(idx_l);
+    
+    int *d = INTEGER(d_);
+  
+    Rcpp::List D_R_sets(D_R_sets_);
+    Rcpp::List DRs(2);
+    Rcpp::IntegerVector Dsetj;
+    Rcpp::IntegerVector dRsetj;
+    int dj;
+    
+    int nd = D_R_sets.size(); // number of unique failure times
+    
+    int nvars = sp_beta.n_rows;
+    int l     = sp_beta.n_cols;
+    int nnz   = index_p.size();
+    
+    arma::mat term1 = arma::mat(1, l);
+    arma::mat expXRbeta_colsum = arma::zeros(1, l); // cumulative sum
+    arma::mat term2 = arma::mat(1, l);
+    arma::mat ll_sum = arma::zeros(1, l);
+    
+    for (int j = nd - 1; j >= 0; j--) { 
+      DRs    = D_R_sets[j];
+      Dsetj  = DRs["Dj"];
+      dRsetj = DRs["dRj"];
+      dj     = *(d + j);
+
+      term1 = colsum(xAcc, row_idx, Dsetj, nvars) * sp_beta;
+      expXRbeta_colsum += 
+        arma::sum(exp(get_eta2(xAcc, row_idx, dRsetj, sp_beta, index_p, index_l, dRsetj.size(), l, nnz)), 0);
+      term2 = dj * log(expXRbeta_colsum); 
+      
+      ll_sum += term1 - term2;
+    }
+    
+    return Rcpp::wrap(ll_sum);
+    //PROTECT(__sexp_result = Rcpp::wrap(ll_sum));
+  //}
+  //UNPROTECT(1);
+  //return __sexp_result;
+  //END_RCPP
+}

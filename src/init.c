@@ -115,6 +115,10 @@ extern SEXP cdfit_gaussian_bedpp_ssr(SEXP X_, SEXP y_, SEXP row_idx_,
 
 extern SEXP _biglasso_get_eta(SEXP xPSEXP, SEXP row_idx_SEXP, SEXP betaSEXP, SEXP idx_pSEXP, SEXP idx_lSEXP);
 
+extern SEXP _biglasso_loglik_cox(SEXP xPSEXP, SEXP row_idx_SEXP, 
+                                 SEXP betaSEXP, SEXP idx_pSEXP, SEXP idx_lSEXP, 
+                                 SEXP D_R_setsSEXP, SEXP d_SEXP);
+
 static R_CallMethodDef callMethods[] = {
   {"cdfit_mgaussian_ssr", (DL_FUNC) &cdfit_mgaussian_ssr, 15},
   {"cdfit_mgaussian_ada", (DL_FUNC) &cdfit_mgaussian_ada, 17},
@@ -132,6 +136,7 @@ static R_CallMethodDef callMethods[] = {
   {"cdfit_gaussian_ssr", (DL_FUNC) &cdfit_gaussian_ssr, 15},
   {"cdfit_gaussian_bedpp_ssr", (DL_FUNC) &cdfit_gaussian_bedpp_ssr, 16},
   {"_biglasso_get_eta", (DL_FUNC) &_biglasso_get_eta, 5},
+  {"_biglasso_loglik_cox", (DL_FUNC) &_biglasso_loglik_cox, 7},
   {NULL, NULL, 0}
 };
 

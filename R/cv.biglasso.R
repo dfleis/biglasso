@@ -118,6 +118,7 @@ cv.biglasso <- function(X, y, row.idx = 1:nrow(X),
   
   cv.args <- list(...)
   cv.args$lambda <- fit$lambda
+  cv.args$family <- fit$family # I think omitting this may have been a bug?
 
   parallel <- FALSE
   if (ncores > 1) {
@@ -197,8 +198,9 @@ cvf <- function(i, XX, y, eval.metric, cv.ind, cv.args, parallel= FALSE) {
   fit.i <- do.call("biglasso", cv.args)
 
   if (fit.i$family == "cox") {
-    
-    #plfull <- TO DO...
+    #plfull   <- cox.deviance(X = XX, y = y, beta = fit.i$beta, row.idx = 1:nrow(y))
+    #plminusk <- cox.deviance(X = XX, y = y, beta = fit.i$beta, row.idx = idx.test)
+    #loss <- plfull - plminusk
     
   } else {
     y2 <- y[cv.ind==i]

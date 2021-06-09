@@ -4,7 +4,7 @@ library(Rcpp)
 
 set.seed(124)
 ### GENERATE DATA 
-no <- 10000
+no <- 1000
 nx <- 5
 dat <- coxed::sim.survdata(N = no, xvars = nx)
 X <- as.matrix(dat$xdata)
