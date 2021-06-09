@@ -23,6 +23,12 @@
 #' for choosing optimal \code{lambda}. "default" for linear regression is MSE
 #' (mean squared error), for logistic regression is misclassification error.
 #' "MAPE", for linear regression only, is the Mean Absolute Percentage Error.
+#' @param grouped Currently is only applicable to Cox models, otherwise ignored.
+#' Mirrors the \code{grouped} parameter used by \code{glmnet}. If \code{grouped}=TRUE 
+#' then the partial likelihood for the K-th fold is calculated by subtracting
+#' the (log) partial likelihood evaluated on the full data set from the 
+#' partial likelihood evaluated on (K-1)/K data set. If \code{grouped}=FALSE
+#' then the partial likelihood is computed only on the K-th fold.
 #' @param ncores The number of cores to use for parallel execution across a
 #' cluster created by the \code{parallel} package. (This is different from
 #' \code{ncores} in \code{\link{biglasso}}, which is the number of OpenMP
@@ -74,6 +80,7 @@
 cv.biglasso <- function(X, y, row.idx = 1:nrow(X), 
                         family = c("gaussian", "binomial", "cox", "mgaussian"),
                         eval.metric = c("default", "MAPE"),
+                        grouped = TRUE,
                         ncores = parallel::detectCores(), ...,
                         nfolds = 5, seed, cv.ind, trace = FALSE) {
   
@@ -92,8 +99,13 @@ cv.biglasso <- function(X, y, row.idx = 1:nrow(X),
   
   fit <- biglasso(X = X, y = y, row.idx = row.idx, family = family, ncores = ncores, ...)
   n <- fit$n
-  E <- Y <- matrix(NA, nrow=n, ncol=length(fit$lambda))
-  # y <- fit$y # this would cause error if eval.metric == "MAPE"
+  if (fit$family == "cox") {
+    E <- matrix(NA, nrow=nfolds, ncol=length(fit$lambda))
+    w <- rep(NA, nfolds) # weights
+  } else {
+    E <- Y <- matrix(NA, nrow=n, ncol=length(fit$lambda))
+    # y <- fit$y # this would cause error if eval.metric == "MAPE"
+  }
   
   if (fit$family == 'binomial') {
     PE <- E
@@ -143,6 +155,7 @@ cv.biglasso <- function(X, y, row.idx = 1:nrow(X),
     fold.results <- parallel::parLapply(cl = cluster, X = 1:nfolds, fun = cvf, XX = xdesc, 
                                         y = y, eval.metric = eval.metric, 
                                         cv.ind = cv.ind, cv.args = cv.args, 
+                                        grouped = grouped,
                                         parallel = parallel)
     parallel::stopCluster(cluster)
   }
@@ -152,29 +165,49 @@ cv.biglasso <- function(X, y, row.idx = 1:nrow(X),
       res <- fold.results[[i]]
     } else {
       if (trace) cat("Starting CV fold #", i, sep="", "\n")
-      res <- cvf(i, X, y, eval.metric, cv.ind, cv.args)
+      res <- cvf(i, X, y, eval.metric, cv.ind, cv.args, grouped)
     }
-    E[cv.ind == i, 1:res$nl] <- res$loss
-    if (fit$family == "binomial") PE[cv.ind == i, 1:res$nl] <- res$pe
-    Y[cv.ind == i, 1:res$nl] <- res$yhat
+    
+    if (fit$family=="cox") {
+      E[i, ] <- res$loss
+      w[i]   <- res$weight
+    } else {
+      E[cv.ind == i, 1:res$nl] <- res$loss
+      if (fit$family == "binomial") PE[cv.ind == i, 1:res$nl] <- res$pe
+      Y[cv.ind == i, 1:res$nl] <- res$yhat
+    }
   }
 
   ## Eliminate saturated lambda values, if any
-  ind <- which(apply(is.finite(E), 2, all))
-  E <- E[,ind]
-  Y <- Y[,ind]
-  lambda <- fit$lambda[ind]
+  if (fit$family != "cox") {
+    ind <- which(apply(is.finite(E), 2, all))
+    E <- E[,ind]
+    Y <- Y[,ind]
+    lambda <- fit$lambda[ind]
+  }
   
   ## Return
-  cve <- apply(E, 2, mean)
-  cvse <- apply(E, 2, sd) / sqrt(n)
+  if (fit$family == "cox") {
+    cve <- apply(E, 2, weighted.mean, w = w)
+    cvse <- sqrt(apply(scale(E, cve, FALSE)^2, 2, weighted.mean, w = w)/(nfolds - 1))
+  } else {
+    cve <- apply(E, 2, mean)
+    cvse <- apply(E, 2, sd) / sqrt(n)
+  }
   min <- which.min(cve)
 
   val <- list(cve=cve, cvse=cvse, lambda=lambda, fit=fit, min=min, lambda.min=lambda[min],
-              null.dev=mean(loss.biglasso(y, rep(mean(y), n), 
-                                          fit$family, eval.metric = eval.metric)),
               cv.ind = cv.ind,
               eval.metric = eval.metric)
+  if (fit$family=="cox") {
+    ## NOTE: Do I need to calculate the entire deviance again? Can I just pass some of the 
+    # results through from the cvf() call?
+    val$null.dev <- cox.deviance(X, y, fit$beta, 1:nrow(y))$nulldev
+  } else {
+    val$null.dev <- mean(loss.biglasso(y, rep(mean(y), n), 
+                                       fit$family, eval.metric = eval.metric))
+  }
+  
   if (fit$family=="binomial") {
     pe <- apply(PE, 2, mean)
     val$pe <- pe[is.finite(pe)]
@@ -183,7 +216,7 @@ cv.biglasso <- function(X, y, row.idx = 1:nrow(X),
   structure(val, class=c("cv.biglasso", "cv.ncvreg"))
 }
 
-cvf <- function(i, XX, y, eval.metric, cv.ind, cv.args, parallel= FALSE) {
+cvf <- function(i, XX, y, eval.metric, cv.ind, cv.args, grouped, parallel=FALSE) {
   # reference to the big.matrix by descriptor info
   if (parallel) {
     XX <- attach.big.matrix(XX)
@@ -197,11 +230,30 @@ cvf <- function(i, XX, y, eval.metric, cv.ind, cv.args, parallel= FALSE) {
   idx.test <- which(cv.ind == i)
   fit.i <- do.call("biglasso", cv.args)
 
-  y2 <- y[cv.ind==i]
-  yhat <- matrix(predict(fit.i, XX, row.idx = idx.test, type="response"), length(y2))
-  loss <- loss.biglasso(y2, yhat, fit.i$family, eval.metric = eval.metric)
+  if (fit.i$family=="cox") {
+    wt <- sum(y[idx.test, 2]) # NOTE: If all obs. are censored in a test set then this will lead to a div by zero
+    if (grouped) { # "V&VH cross-validation error" (default setting in glmnet)
+      plfull   <- cox.deviance(X = XX, y = y, beta = fit.i$beta, row.idx = 1:nrow(y))
+      plminusk <- cox.deviance(X = XX, y = y, beta = fit.i$beta, row.idx = idx.test)
+      loss <- (plfull$dev - plminusk$dev)/wt
+    } else { # "basic cross-validation error" (alternative setting in glmnet)
+      plk <- cox.deviance(X = XX, y = y, beta = fit.i$beta, row.idx = idx.test)
+      loss <- plk$dev/wt
+    }
+    
+  } else {
+    y2 <- y[cv.ind==i]
+    yhat <- matrix(predict(fit.i, XX, row.idx = idx.test, type="response"), length(y2))
+    loss <- loss.biglasso(y2, yhat, fit.i$family, eval.metric = eval.metric)
+  }
   
   pe <- if (fit.i$family=="binomial") {(yhat < 0.5) == y2} else NULL
-  list(loss=loss, pe=pe, nl=length(fit.i$lambda), yhat=yhat)
+  out <- list(loss=loss, pe=pe, nl=length(fit.i$lambda))
+  if (fit.i$family == "cox") {
+    out$weight <- wt
+  } else {
+    out$yhat <- yhat
+  }
+  return (out)
 }
 
