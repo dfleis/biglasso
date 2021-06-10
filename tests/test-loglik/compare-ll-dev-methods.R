@@ -228,7 +228,7 @@ calc.ll3 <- function(X, y, beta) {
   }
   
   # null
-  expXRbeta_colsum <- 0 # rep(0, length(lambda)) # also, rep(0, ncol(beta)) works
+  expXRbeta_colsum <- 1 # rep(0, length(lambda)) # also, rep(0, ncol(beta)) works
   ll.null <- 0
   for (j in length(d):1) {
     Dj <- D_dR_sets[[j]]$Dj
@@ -294,12 +294,13 @@ D <- rbind(-2*(ll0$ll - ll0$ll_sat),
            cox.deviance(X = Xbig, y = y, beta = fit.bl$beta, row.idx = idx)$dev)
 rownames(D) <- c("ll0", "ll1", "ll2", "ll3", "ll.gn", "cox.dev")
 
-# ll0$ll_null
-# ll1$ll_null
-# ll2$ll_null
-# ll3$ll_null
-# ll.gn$ll_null
-D
+ll0$ll_null
+ll1$ll_null
+ll2$ll_null
+ll3$ll_null
+ll.gn$ll_null
+
+
 
 ll0$ll
 ll1$ll
