@@ -578,7 +578,7 @@ SEXP loglik_cox(SEXP xP, SEXP row_idx_, SEXP beta, SEXP idx_p, SEXP idx_l, SEXP 
     int nnz   = index_p.size();
     
     arma::mat term1 = arma::mat(1, l);
-    arma::mat expXRbeta_colsum = arma::zeros(1, l); // cumulative sum
+    arma::mat expXRbeta_colsum = arma::ones(1, l); // cumulative sum
     arma::mat term2 = arma::mat(1, l);
     arma::mat ll_sum = arma::zeros(1, l);
     

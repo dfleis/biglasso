@@ -26,8 +26,8 @@ Xbig <- as.big.matrix(X)
 ##### CHECKLIST: CASES TO TEST #####
 # no censored data, no ties (pass)
 # censored data, no ties (pass)
-# no censored data, ties (FAIL)
-# censored data, ties (FAIL)
+# no censored data, ties 
+# censored data, ties 
 ###################################
 
 ### MODEL PARAMETERS

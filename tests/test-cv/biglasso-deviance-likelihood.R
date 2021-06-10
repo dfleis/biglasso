@@ -5,7 +5,7 @@ library(survival)
 
 set.seed(124)
 ### GENERATE DATA 
-no <- 5000
+no <- 50
 nx <- 20
 dat <- coxed::sim.survdata(N = no, xvars = nx)
 X <- as.matrix(dat$xdata)
@@ -31,7 +31,7 @@ Xbig <- as.big.matrix(X)
 ### MODEL PARAMETERS
 alpha <- 0.5
 penalty <- "enet" 
-lambda  <- exp(seq(-1, -6, length.out = 100)) #c(0.1, 0.01)
+lambda  <- exp(seq(-1, -6, length.out = 8)) #c(0.1, 0.01)
 
 ##### FIT MODELS
 fit.cx <- coxph(Surv(y) ~ X, ties = "breslow")
@@ -102,27 +102,27 @@ calc.devs <- function(X, y, beta) {
     }
   }
   D0 <- -2 * (ll.null - ll.sat)
-  
-  return (D)
-  #return (c("nulldev" = D0, "dev" = D, "ll_sat" = ll.sat, "ll" = ll, "ll_null" = ll.null))
+
+  return (list("nulldev" = D0, "dev" = D, "ll_sat" = ll.sat, "ll" = ll, "ll_null" = ll.null))
 }
 
 # Dmat <- matrix(c("cx" = dev.cx, "bl" = c(NA, dev.bl), "gn" = c(dev.gn.null, dev.gn)), ncol = 2, nrow = 3, byrow = T)
 # colnames(Dmat) <- c("D0", "D")
 # rownames(Dmat) <- c("cx", "bl", "gn")
 
+idx10 <- c(which(y[,1] == 1 & y[,2] == 0)[1], which(y[,1] == 1 & y[,2] == 1)[1], which(y[,1] != 1 & y[,2] == 1)[1])
+# two cens (diff times, one same as the uncens), one uncens
+idx11 <- c(which(y[,1] == 1 & y[,2] == 1)[1], which(y[,1] == 1 & y[,2] == 0)[1], which(y[,1] != 1 & y[,2] == 0)[1])
+
+
+idx <- idx11
+
+
 pt <- proc.time()
-devs1 <- calc.devs(X, y, beta.bl)
-proc.time() - pt
-pt <- proc.time()
-devs2 <- calc.devs(X, y, beta.gn)
+devs1 <- calc.devs(X[idx,], y[idx,], beta.bl)
 proc.time() - pt
 
-#round(devs1, 4)
-#round(devs2, 4)
+coxnet.deviance(x = X[idx,], y = y[idx,], beta = beta.bl)
 
-
-
-
-
-
+biglasso::cox.deviance(X = Xbig, y = y, beta = fit.gn$beta, row.idx = idx)$loglik
+devs1$ll
