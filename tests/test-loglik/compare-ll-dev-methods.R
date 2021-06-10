@@ -7,9 +7,9 @@ library(survival)
 #=======================================#
 ### GENERATE DATA 
 set.seed(124)
-nobs  <- 1000
-nvars <- 50
-p_nz  <- 0.25
+nobs  <- 5000
+nvars <- 100
+p_nz  <- 0.5
 beta_true <- rnorm(nvars, 0, 0.1) * rbinom(nvars, 1, p_nz)/10
 
 dat <- coxed::sim.survdata(N = nobs, xvars = nvars, beta = beta_true)
@@ -164,8 +164,8 @@ calc.ll2 <- function(X, y, beta) {
     XRbeta <- X[Rj,,drop=F] %*% beta
     term2 <- d[j] * log(colSums(exp(XRbeta)))
     
-    print(which(Rj))
-    print(as.numeric(term2))
+    #print(which(Rj))
+    #print(as.numeric(term2))
     
     ll <- ll + (term1 - term2)
   }
@@ -230,8 +230,8 @@ calc.ll3 <- function(X, y, beta) {
     expXRbeta_colsum <- expXRbeta_colsum + colSums(exp(X[dRj,,drop=F] %*% beta))
     term2 <- d[j] * log(expXRbeta_colsum)
     
-    print(dRj)
-    print(as.numeric(term2))
+    #print(dRj)
+    #print(as.numeric(term2))
     
     ll <- ll + (term1 - term2)
   }
@@ -284,7 +284,7 @@ idx11 <- c(which(y[,1] == 1 & y[,2] == 1)[1], which(y[,1] == 1 & y[,2] == 0)[1],
 y[idx10,]
 y[idx11,]
 
-idx <- idx10#c(idx11, 33, 34, 35)
+idx <- 1:nrow(y)#c(idx11, 33, 34, 35)
 
 ll0 <- calc.ll0(X[idx,], y[idx,], beta.bl)
 ll1 <- calc.ll1(X[idx,], y[idx,], beta.bl)

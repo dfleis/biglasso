@@ -21,7 +21,6 @@
 #'
 #' @export cox.deviance 
 cox.deviance <- function(X, y, beta, row.idx) {
-  print("Hello, World!")
   y <- y[row.idx,]
 
   # many of the following objects are computed in the biglasso::biglasso function
