@@ -231,6 +231,11 @@ cvf <- function(i, XX, y, eval.metric, cv.ind, cv.args, grouped, parallel=FALSE)
   fit.i <- do.call("biglasso", cv.args)
 
   if (fit.i$family=="cox") {
+    ##
+    ## TODO: check if size of fold makes sense (copy glmnet's behaviour)
+    ## Warning message:
+    ## Option grouped=TRUE enforced for cv.coxnet, since < 10 observations per fold 
+    ##
     wt <- sum(y[idx.test, 2]) # NOTE: If all obs. are censored in a test set then this will lead to a div by zero
     if (grouped) { # "V&VH cross-validation error" (default setting in glmnet)
       plfull   <- cox.deviance(X = XX, y = y, beta = fit.i$beta, row.idx = 1:nrow(y))
