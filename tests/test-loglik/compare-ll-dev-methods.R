@@ -185,7 +185,6 @@ calc.ll2 <- function(X, y, beta) {
 calc.ll3 <- function(X, y, beta) {
   # REVERSE ITERATIVE CALCULATING OVER THE SET-DIFFERENCE OF THE AT-RISK SET
   # (cumulative calculation for the second term in the fitted ll)
-  
   tOrder <- order(y[,1]) # indices of sorted times
   d <- as.numeric(table(y[y[,2]==1,1])) # counts of unique failure times for all uncensored obs. (y[,2] == 1)
   dtime <- sort(unique(y[y[,2]==1,1]))  # sorted unique failure times for all uncensored obs.
@@ -211,10 +210,12 @@ calc.ll3 <- function(X, y, beta) {
   #### it should ALSO be including all censored obs. >= the j-th unique time.
   #### Potential soln: Loop over all censored obs. and add those in after?
   ####
+  ycens <- !(y[,1] %in% dtime) # censored times not equal to any uncensored times 
+  
   D_dR_sets <- lapply(1:length(d), function(j) {
-    Dj <- d_idx2 == j
-    Dj <- Dj[tOrig] & y[,2]
-    dRj <- y[,1] == y[Dj, 1][1]
+    dRj <- (d_idx2 == j)[tOrig]
+    #dRj <- Dj[tOrig] #y[,1] == y[Dj,1][1] #(y[,1] == y[Dj, 1][1] | (y[,1] %in% ycens))
+    Dj <- dRj & y[,2]
     list("Dj" = as.integer(which(Dj)),
          "dRj" = as.integer(which(dRj)),
          "dj" = d[j])
@@ -283,8 +284,7 @@ idx11 <- c(which(y[,1] == 1 & y[,2] == 1)[1], which(y[,1] == 1 & y[,2] == 0)[1],
 y[idx10,]
 y[idx11,]
 
-idx <- c(idx11, 33, 34, 35)
-
+idx <- idx10#c(idx11, 33, 34, 35)
 
 ll0 <- calc.ll0(X[idx,], y[idx,], beta.bl)
 ll1 <- calc.ll1(X[idx,], y[idx,], beta.bl)

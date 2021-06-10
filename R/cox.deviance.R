@@ -9,9 +9,9 @@
 #' @param beta Fitted coefficients obtained from a \code{\link[biglasso]{biglasso}} object.
 #' @param row.idx Integer vector of row/observation indices to be used in computing model likelihoods.
 #' @return A list with deviance and log-likelihood values calculated over the fitted coefficients.
-#' \item{nulldev}{The null deviance of the model defined to be -2 * (loglik_sat - loglik_null), where the null
+#' \item{nulldev}{The null deviance of the model defined to be -2 * (loglike_sat - loglike_null), where the null
 #' model in the context of Cox regression refers to the 0 model.} \item{dev}{Fitted deviance associated with
-#' the observations and fitted coefficients. Defined to be -2 * (loglik_sat - loglik), where loglik
+#' the observations and fitted coefficients. Defined to be -2 * (loglike_sat - loglike), where loglike
 #' is calculated using the Breslow approximation of the Cox model likelihood.} \item{dev.ratio}{The fraction of
 #' (null) deviance explained, dev.ratio = 1 - dev/nulldev. Calculated primarily as a way to quickly compare
 #' outputs with those of \code{"glmnet"}.}
@@ -38,32 +38,20 @@ cox.deviance <- function(X, y, beta, row.idx) {
   # unbelievably hacky solution to omitting any censored times occurring before the first uncensored one:
   d_idx2 <- c(rep(-999, length(tOrder) - length(row.idx.cox)), d_idx)
 
-
-  # # saturated likelihood (copied from glmnet)
-  # ### NOTE: This may just be identical to doing -sum(d * log(d)) and is just a waste of time
-  # ### to do again
-  # weights <- rep(1, nrow(y)) # currently unimplemented here, but glmnet permits observation-wise weights
-  # wd <- weights[y[,2] == 1]
-  # tyd <- y[y[,2] == 1,1]
-  # if (any(duplicated(tyd))) {
-  #   wd <- tapply(wd, tyd, sum) # counts of unique failure times for uncens. obs (equiv. to table(y[y[,2]==1,1]))
-  # }
-  # wd <- wd[wd > 0]
-  # ll.sat <- -sum(wd * log(wd))
+  beta.T <- as(beta, "dgTMatrix")
+  
+  ### saturated likelihood 
   ll.sat <- -sum(d * log(d))
   
-  
-  beta.T <- as(beta, "dgTMatrix")
-
+  ### fitted likelihood
   # Note that we are NOT calculating the R set cumulatively (hence dR for the difference/differential of
   # the R set). This allows us to save time when computing likelihoods via the fact that the cumulative
   # sets Rj are strictly decreasing as j increases. For this reason we compute the likelihoods
   # from j = length(d) ... 1 and sum the terms containing dRj as we iterate in j. See the C++ code
   # for details
   D_dR_sets <- lapply(1:length(d), function(j) {
-    Dj <- d_idx2 == j
-    Dj <- Dj[tOrig] & y[,2]
-    dRj <- (y[,1] == y[Dj,1][1])
+    dRj <- (d_idx2 == j)[tOrig]
+    Dj  <- dRj & y[,2]
     list("Dj" = as.integer(which(Dj) - 1),
          "dRj" = as.integer(which(dRj) - 1))
   })
@@ -72,6 +60,7 @@ cox.deviance <- function(X, y, beta, row.idx) {
   ll <- as.numeric(ll.out)
   D <- -2 * (ll - ll.sat)
 
+  ### null likelihood (from the 0 model)
   ll.null <- 0
   # this section could be coded more elegantly, but the time it takes is trivial in
   # comparison to the model likelihood
@@ -84,13 +73,16 @@ cox.deviance <- function(X, y, beta, row.idx) {
   D0 <- -2 * (ll.null - ll.sat)
 
   return (list("nulldev" = D0, "dev" = D, "dev.ratio" = 1 - D/D0,
-               "loglik_null" = ll.null, "loglik" = ll, "loglik_sat" = ll.sat))
+               "loglike_null" = ll.null, "loglike" = ll, "loglike_sat" = ll.sat))
   
+  # ###### IS THE ABOVE WORK EVEN NECESSARY? 
+  # ###### Can we just implement something simpler (see like below 
+  # ###### -- seems to be identical to glmnet despite glmnet stating
+  # ###### it uses Breslow's approximation in the presence of ties)
   # ######
-  # ###### IS THE ABOVE WORK EVEN NECESSARY? Can we just implement something
-  # ###### simpler like below (seems to be identical to glmnet despite 
-  # ###### glmnet claiming to use Breslow in the presence of ties)
-  # ######
+  # ###### It might be a good idea to implement it in a separate function
+  # ###### and decide later?
+  #
   # ### fitted likelihood
   # ll <- 0
   # for (i in 1:nrow(y)) {

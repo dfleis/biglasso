@@ -18,9 +18,9 @@ double type \code{\link[bigmemory]{big.matrix}} object.}
 }
 \value{
 A list with deviance and log-likelihood values calculated over the fitted coefficients.
-\item{nulldev}{The null deviance of the model defined to be -2 * (loglik_sat - loglik_null), where the null
+\item{nulldev}{The null deviance of the model defined to be -2 * (loglike_sat - loglike_null), where the null
 model in the context of Cox regression refers to the 0 model.} \item{dev}{Fitted deviance associated with
-the observations and fitted coefficients. Defined to be -2 * (loglik_sat - loglik), where loglik
+the observations and fitted coefficients. Defined to be -2 * (loglike_sat - loglike), where loglike
 is calculated using the Breslow approximation of the Cox model likelihood.} \item{dev.ratio}{The fraction of
 (null) deviance explained, dev.ratio = 1 - dev/nulldev. Calculated primarily as a way to quickly compare
 outputs with those of \code{"glmnet"}.}
