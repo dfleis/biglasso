@@ -164,7 +164,8 @@ calc.ll2 <- function(X, y, beta) {
     XRbeta <- X[Rj,,drop=F] %*% beta
     term2 <- d[j] * log(colSums(exp(XRbeta)))
     
-    #print(rbind(term1, term2))
+    print(which(Rj))
+    print(as.numeric(term2))
     
     ll <- ll + (term1 - term2)
   }
@@ -204,6 +205,12 @@ calc.ll3 <- function(X, y, beta) {
   ll.sat <- -sum(d * log(d))
 
   # fitted
+  
+  ####
+  #### NOTE TO SELF: It looks like the reason why we're seeing diff values is because
+  #### it should ALSO be including all censored obs. >= the j-th unique time.
+  #### Potential soln: Loop over all censored obs. and add those in after?
+  ####
   D_dR_sets <- lapply(1:length(d), function(j) {
     Dj <- d_idx2 == j
     Dj <- Dj[tOrig] & y[,2]
@@ -213,7 +220,7 @@ calc.ll3 <- function(X, y, beta) {
          "dj" = d[j])
   })
   
-  expXRbeta_colsum <- rep(1, ncol(beta)) # rep(0, length(lambda)) # also, rep(0, ncol(beta)) works
+  expXRbeta_colsum <- rep(0, ncol(beta)) # rep(0, length(lambda)) # also, rep(0, ncol(beta)) works
   ll <- 0
   for (j in length(d):1) {
     Dj <- D_dR_sets[[j]]$Dj
@@ -222,20 +229,18 @@ calc.ll3 <- function(X, y, beta) {
     expXRbeta_colsum <- expXRbeta_colsum + colSums(exp(X[dRj,,drop=F] %*% beta))
     term2 <- d[j] * log(expXRbeta_colsum)
     
-    print(rbind(term1, term2))
+    print(dRj)
+    print(as.numeric(term2))
     
     ll <- ll + (term1 - term2)
   }
   
   # null
-  expXRbeta_colsum <- 1 # rep(0, length(lambda)) # also, rep(0, ncol(beta)) works
+  expXRbeta_colsum <- 0 # rep(0, length(lambda)) # also, rep(0, ncol(beta)) works
   ll.null <- 0
   for (j in length(d):1) {
     Dj <- D_dR_sets[[j]]$Dj
     dRj <- D_dR_sets[[j]]$dRj
-    ###############################################
-    #dRj <- setdiff(dRj, which(y[,2] == 0)) ##### TEMP
-    ###############################################
     term1 <- colSums(X[Dj,,drop=F]) %*% rep(0, ncol(X))
     expXRbeta_colsum <- expXRbeta_colsum + colSums(exp(X[dRj,,drop=F] %*% rep(0, ncol(X))))
     term2 <- d[j] * log(expXRbeta_colsum)
@@ -275,7 +280,11 @@ idx10 <- c(which(y[,1] == 1 & y[,2] == 0)[1], which(y[,1] == 1 & y[,2] == 1)[1],
 # two cens (diff times, one same as the uncens), one uncens
 idx11 <- c(which(y[,1] == 1 & y[,2] == 1)[1], which(y[,1] == 1 & y[,2] == 0)[1], which(y[,1] != 1 & y[,2] == 0)[1])
 
-idx <- idx11
+y[idx10,]
+y[idx11,]
+
+idx <- c(idx11, 33, 34, 35)
+
 
 ll0 <- calc.ll0(X[idx,], y[idx,], beta.bl)
 ll1 <- calc.ll1(X[idx,], y[idx,], beta.bl)
@@ -293,19 +302,15 @@ D <- rbind(-2*(ll0$ll - ll0$ll_sat),
            -2*(ll.gn$ll - ll.gn$ll_sat),
            cox.deviance(X = Xbig, y = y, beta = fit.bl$beta, row.idx = idx)$dev)
 rownames(D) <- c("ll0", "ll1", "ll2", "ll3", "ll.gn", "cox.dev")
-
-ll0$ll_null
-ll1$ll_null
-ll2$ll_null
-ll3$ll_null
-ll.gn$ll_null
-
-
-
-ll0$ll
-ll1$ll
-ll2$ll
-ll3$ll
-ll.gn$ll
-
-
+# ll0$ll
+# ll1$ll
+# ll2$ll
+# ll3$ll
+# ll.gn$ll
+# 
+# ll0$ll_null
+# ll1$ll_null
+# ll2$ll_null
+# ll3$ll_null
+# ll.gn$ll_null
+D
