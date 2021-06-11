@@ -23,9 +23,6 @@
 cox.deviance <- function(X, y, beta, row.idx) {
   y <- y[row.idx,]
 
-  # many of the following objects are computed in the biglasso::biglasso function
-  # in principle these could be passed as arguments, though I'm not sure how much of
-  # a benefit that would provide (time-wise) at the cost of readability & parsimony
   tOrder      <- order(y[,1])
   d           <- as.numeric(table(y[y[,2]==1,1]))
   dtime       <- sort(unique(y[y[,2]==1,1]))
@@ -46,8 +43,8 @@ cox.deviance <- function(X, y, beta, row.idx) {
   # Note that we are NOT calculating the R set cumulatively (hence dR for the difference/differential of
   # the R set). This allows us to save time when computing likelihoods via the fact that the cumulative
   # sets Rj are strictly decreasing as j increases. For this reason we compute the likelihoods
-  # from j = length(d) ... 1 and sum the terms containing dRj as we iterate in j. See the C++ code
-  # for details
+  # backwards, from j = length(d) ... 1, and sum the terms containing dRj as we iterate in j. 
+  # See the C++ code for details
   D_dR_sets <- lapply(1:length(d), function(j) {
     dRj <- (d_idx2 == j)[tOrig]
     Dj  <- dRj & y[,2]
@@ -81,6 +78,8 @@ cox.deviance <- function(X, y, beta, row.idx) {
   # ######
   # ###### It might be a good idea to implement it in a separate function
   # ###### and decide later?
+  # ###### Obviously this would have to have a C++ section as well to
+  # ###### account for big.matrix objects.
   #
   # ### fitted likelihood
   # ll <- 0
@@ -106,6 +105,8 @@ cox.deviance <- function(X, y, beta, row.idx) {
   # }
   # 
   # ### saturated likelihood
+  # # this version is from glmnet::coxnet.deviance(). I believe it's identical to -sum(d * log(d))
+  # # when weights are = 1, but clearly allows for more flexible modelling when given user-supplied weights
   # weights <- rep(1, nrow(y)) # currently unimplemented here, but glmnet permits observation-wise weights
   # wd <- weights[tevent == 1]
   # tyd <- ty[tevent == 1]

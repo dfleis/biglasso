@@ -236,6 +236,9 @@ cvf <- function(i, XX, y, eval.metric, cv.ind, cv.args, grouped, parallel=FALSE)
     ## Warning message:
     ## Option grouped=TRUE enforced for cv.coxnet, since < 10 observations per fold 
     ##
+    ## It's probably also worth creating an error/warning when too many censored obs.
+    ## are in a single fold (I believe glmnet does this as well)
+    ##
     wt <- sum(y[idx.test, 2]) # NOTE: If all obs. are censored in a test set then this will lead to a div by zero
     if (grouped) { # "V&VH cross-validation error" (default setting in glmnet)
       plfull   <- cox.deviance(X = XX, y = y, beta = fit.i$beta, row.idx = 1:nrow(y))
@@ -245,7 +248,6 @@ cvf <- function(i, XX, y, eval.metric, cv.ind, cv.args, grouped, parallel=FALSE)
       plk <- cox.deviance(X = XX, y = y, beta = fit.i$beta, row.idx = idx.test)
       loss <- plk$dev/wt
     }
-    
   } else {
     y2 <- y[cv.ind==i]
     yhat <- matrix(predict(fit.i, XX, row.idx = idx.test, type="response"), length(y2))

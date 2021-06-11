@@ -550,6 +550,7 @@ arma::mat colsum(MatrixAccessor<double> xAcc, IntegerVector row_idx, IntegerVect
 
 // [[Rcpp::export]]
 SEXP loglik_cox(SEXP xP, SEXP row_idx_, SEXP beta, SEXP idx_p, SEXP idx_l, SEXP D_R_sets_, SEXP d_) {
+  // I wasn't sure what the commented out sections below do, so I've excluded them for now...
   //BEGIN_RCPP
   //SEXP __sexp_result;
   //{
