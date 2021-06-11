@@ -101,7 +101,7 @@ cv.biglasso <- function(X, y, row.idx = 1:nrow(X),
   n <- fit$n
   if (fit$family == "cox") {
     E <- matrix(NA, nrow=nfolds, ncol=length(fit$lambda))
-    w <- rep(NA, nfolds) # weights
+    w <- rep(NA, nfolds) # CV weights (w[i] = # of uncensored obs. in the i-th test set, copied from glmnet)
   } else {
     E <- Y <- matrix(NA, nrow=n, ncol=length(fit$lambda))
     # y <- fit$y # this would cause error if eval.metric == "MAPE"
@@ -221,6 +221,7 @@ cvf <- function(i, XX, y, eval.metric, cv.ind, cv.args, grouped, parallel=FALSE)
   if (parallel) {
     XX <- attach.big.matrix(XX)
   }
+  
   cv.args$X <- XX
   cv.args$y <- y
   cv.args$row.idx <- which(cv.ind != i)
@@ -248,6 +249,7 @@ cvf <- function(i, XX, y, eval.metric, cv.ind, cv.args, grouped, parallel=FALSE)
       plk <- cox.deviance(X = XX, y = y, beta = fit.i$beta, row.idx = idx.test)
       loss <- plk$dev/wt
     }
+    
   } else {
     y2 <- y[cv.ind==i]
     yhat <- matrix(predict(fit.i, XX, row.idx = idx.test, type="response"), length(y2))

@@ -141,7 +141,7 @@ legend("topright", legend = c("biglasso", "glmnet"), seg.len = 2, col = myclrs, 
 nz.tot.diff <- nz.tot.gn - nz.tot.bl
 plot(NA, xlim = range(lambda), ylim = range(nz.tot.diff), log = 'x',
      xlab = expression(lambda), ylab = "nvars(biglasso) - nvars(glmnet)", 
-     main = "Difference in the Number of Variables\nSelected by biglasso and glmnet")
+     main = "Difference between the Nb. of Covariates\nRetained by biglasso and glmnet")
 grid(); abline(h = 0, v = 0, lwd = 1.5, col = 'gray50')
 for (i in 1:nsims) {
   lines(nz.tot.diff[,i] ~ lambda, type = 's', col = rgb(0, 0, 0, 0.75), lwd = 1)
@@ -150,7 +150,7 @@ lines(apply(nz.tot.diff, 1, mean) ~ lambda, col = 'red', lwd = 2)
 
 plot(NA, xlim = range(lambda), ylim = range(nz.diff.lam), log = 'x',
      xlab = expression(lambda), ylab = "Nb. Vars.", 
-     main = "Number of Variables Selected by\nOne Method but not the Other")
+     main = "Number of Variables Retained by\nOne Method but not the Other")
 grid(); abline(h = 0, v = 0, lwd = 1.5, col = 'gray50')
 for (i in 1:nsims) {
   lines(nz.diff.lam[,i] ~ lambda, type = 's', col = rgb(0, 0, 0, 0.75), lwd = 1)

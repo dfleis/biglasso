@@ -550,11 +550,11 @@ arma::mat colsum(MatrixAccessor<double> xAcc, IntegerVector row_idx, IntegerVect
 
 // [[Rcpp::export]]
 SEXP loglik_cox(SEXP xP, SEXP row_idx_, SEXP beta, SEXP idx_p, SEXP idx_l, SEXP D_R_sets_, SEXP d_) {
-  // I wasn't sure what the commented out sections below do, so I've excluded them for now...
-  //BEGIN_RCPP
-  //SEXP __sexp_result;
-  //{
-  //  Rcpp::RNGScope __rngScope;  
+  // I'm not sure what the commented code below does, so I have left it out (for now)
+  // BEGIN_RCPP
+  // SEXP __sexp_result;
+  // {
+  //   Rcpp::RNGScope __rngScope;  
     XPtr<BigMatrix> xpMat(xP); //convert to big.matrix pointer;
     MatrixAccessor<double> xAcc(*xpMat);
     
@@ -598,9 +598,9 @@ SEXP loglik_cox(SEXP xP, SEXP row_idx_, SEXP beta, SEXP idx_p, SEXP idx_l, SEXP 
     }
     
     return Rcpp::wrap(ll_sum);
-    //PROTECT(__sexp_result = Rcpp::wrap(ll_sum));
-  //}
-  //UNPROTECT(1);
-  //return __sexp_result;
-  //END_RCPP
+  //   PROTECT(__sexp_result = Rcpp::wrap(ll_sum));
+  // }
+  // UNPROTECT(1);
+  // return __sexp_result;
+  // END_RCPP
 }

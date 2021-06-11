@@ -321,6 +321,7 @@ biglasso <- function(X, y, row.idx = 1:nrow(X),
   storage.mode(penalty.factor) <- "double"
   
   n <- length(row.idx) ## subset of X. idx: indices of rows.
+  
   if (missing(lambda)) {
     user.lambda <- FALSE
     lambda <- rep(0.0, nlambda);
@@ -570,6 +571,9 @@ biglasso <- function(X, y, row.idx = 1:nrow(X),
   col.idx <- col.idx + 1 # indices (in R) for which variables have scale > 1e-6
 
   ## Eliminate saturated lambda values, if any
+  ##### NOTE: In the case of the Cox model I noticed that my current implementation
+  ##### of the CV algorithm does not account for potentially saturated (and therefore
+  ##### omitted) values. To do..
   ind <- !is.na(iter)
   if (family %in% c("gaussian","binomial")) a <- a[ind]
   if(!is.list(b)) b <- b[, ind, drop=FALSE]
