@@ -169,8 +169,8 @@ cv.biglasso <- function(X, y, row.idx = 1:nrow(X),
     }
     
     if (fit$family=="cox") {
-      E[i, ] <- res$loss
-      w[i]   <- res$weight
+      E[i, 1:res$nl] <- res$loss # 1:res$nl to account for saturated values that had been removed
+      w[i]           <- res$weight
     } else {
       E[cv.ind == i, 1:res$nl] <- res$loss
       if (fit$family == "binomial") PE[cv.ind == i, 1:res$nl] <- res$pe
