@@ -1,4 +1,6 @@
 #####
+# SIMULATED DATA
+#
 # Try and come up with some way to validate the cv.biglasso output
 # (compute & compare with estimates provided by cv.glmnet?)
 #
