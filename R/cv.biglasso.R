@@ -181,7 +181,7 @@ cv.biglasso <- function(X, y, row.idx = 1:nrow(X),
   ## Eliminate saturated lambda values, if any
   ind <- which(apply(is.finite(E), 2, all))
   E <- E[,ind]
-  Y <- Y[,ind]
+  if (fit$family != "cox") Y <- Y[,ind]
   lambda <- fit$lambda[ind]
   
   ## Return
@@ -199,7 +199,7 @@ cv.biglasso <- function(X, y, row.idx = 1:nrow(X),
               eval.metric = eval.metric)
   if (fit$family=="cox") {
     ## NOTE: Do I need to calculate the entire deviance again? Can I just pass some of the 
-    # results through from the cvf() call?
+    # results through from the cvf() call or calculate from the first call of biglasso?
     val$null.dev <- cox.deviance(X, y, fit$beta, 1:nrow(y))$nulldev
   } else {
     val$null.dev <- mean(loss.biglasso(y, rep(mean(y), n), 
