@@ -571,16 +571,17 @@ biglasso <- function(X, y, row.idx = 1:nrow(X),
   col.idx <- col.idx + 1 # indices (in R) for which variables have scale > 1e-6
 
   ## Eliminate saturated lambda values, if any
-  ##### NOTE: In the case of the Cox model I noticed that my current implementation
-  ##### of the CV algorithm does not account for potentially saturated (and therefore
-  ##### omitted) values. To do..
+  ### Would it be better to repeat the values from the last unsaturated calculation
+  ### all the subsequent lambda values?
   ind <- !is.na(iter)
+  if (warn & any(!ind))
+    warning(paste0("Saturated model for lambda <= ", lambda[which(!ind)[1]], ". Omitting estimates beyond this value of lambda."))
   if (family %in% c("gaussian","binomial")) a <- a[ind]
   if(!is.list(b)) b <- b[, ind, drop=FALSE]
   iter <- iter[ind]
   lambda <- lambda[ind]
   loss <- loss[ind]
-
+  
   if (warn & any(iter==max.iter)) warning("Algorithm failed to converge for some values of lambda")
 
   ## Unstandardize coefficients:
