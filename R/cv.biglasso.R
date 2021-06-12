@@ -179,12 +179,10 @@ cv.biglasso <- function(X, y, row.idx = 1:nrow(X),
   }
 
   ## Eliminate saturated lambda values, if any
-  if (fit$family != "cox") {
-    ind <- which(apply(is.finite(E), 2, all))
-    E <- E[,ind]
-    Y <- Y[,ind]
-    lambda <- fit$lambda[ind]
-  }
+  ind <- which(apply(is.finite(E), 2, all))
+  E <- E[,ind]
+  Y <- Y[,ind]
+  lambda <- fit$lambda[ind]
   
   ## Return
   if (fit$family == "cox") {
