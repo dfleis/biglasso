@@ -852,6 +852,7 @@ RcppExport SEXP cdfit_cox_ssr(SEXP X_, SEXP y_, SEXP d_, SEXP d_idx_, SEXP row_i
     }
     
     n_reject[l] = p - sum(e2, p);
+    // coordinate descent algorithm starts here (updating coef estimates)
     while (iter[l] < max_iter) {
       while (iter[l] < max_iter) {
         while (iter[l] < max_iter) {

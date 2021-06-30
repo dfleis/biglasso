@@ -523,7 +523,7 @@ RcppExport SEXP get_eta(SEXP xP, SEXP row_idx_, SEXP beta, SEXP idx_p, SEXP idx_
 arma::mat get_eta2(MatrixAccessor<double> xAcc, IntegerVector row_idx, IntegerVector set_idx, 
                    arma::sp_mat sp_beta, IntegerVector index_p, IntegerVector index_l, 
                    int n, int l, int nnz) {
-  // initialize result
+  // initialize result 
   arma::mat res = arma::zeros(n, l);
 
   for (int k = 0; k < nnz; k++) {
