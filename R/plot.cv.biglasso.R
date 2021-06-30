@@ -46,6 +46,8 @@ plot.cv.biglasso <- function(x, log.l = TRUE, type = c("cve", "rsq", "scale",
     # will draw the 1-se line in front of the cv error bars rather than behind
     # the bars (as it does with the min value). this is a tragedy and I should
     # be publically shamed for such disappointment
-    abline(v = log(cv.bl$cve.1se), lty = 2, lwd = 0.5)
+    lams <- x$lambda.1se 
+    if (log.l) lams <- log(lams)
+    abline(v = lams, lty = 2, lwd = 0.5)
   }
 }
