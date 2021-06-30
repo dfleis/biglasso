@@ -194,7 +194,12 @@ cv.biglasso <- function(X, y, row.idx = 1:nrow(X),
   }
   min <- which.min(cve)
 
+  ## include values for the 1-se rule
+  cve.1se   <- (cve + cvse)[min]
+  lambda.1se <- max(lambda[cve <= cve.1se], na.rm = T)
+  
   val <- list(cve=cve, cvse=cvse, lambda=lambda, fit=fit, min=min, lambda.min=lambda[min],
+              cve.1se = cve.1se, lambda.1se = lambda.1se,
               cv.ind = cv.ind,
               eval.metric = eval.metric)
   if (fit$family=="cox") {

@@ -41,4 +41,11 @@ plot.cv.biglasso <- function(x, log.l = TRUE, type = c("cve", "rsq", "scale",
   class(x) <- 'cv.ncvreg'
   plot(x = x, log.l = log.l, type = type, selected = selected, 
        vertical.line = vertical.line, col = col, ...)
+  if ("cve" %in% type) {
+    # unfortunately since I don't want to tear down the ncvreg backend this plot
+    # will draw the 1-se line in front of the cv error bars rather than behind
+    # the bars (as it does with the min value). this is a tragedy and I should
+    # be publically shamed for such disappointment
+    abline(v = log(cv.bl$cve.1se), lty = 2, lwd = 0.5)
+  }
 }
