@@ -254,7 +254,16 @@
   <span class="fu"><a href="https://rdrr.io/r/utils/write.table.html">write.csv</a></span><span class="op">(</span><span class="va">y</span>, <span class="st">"y.csv"</span>, row.names <span class="op">=</span> <span class="cn">F</span><span class="op">)</span>
   <span class="co">## Pretend the data is stored in the ~90MB .csv file and is too large to fit into memory</span>
   <span class="va">X.bm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/setupX.html">setupX</a></span><span class="op">(</span><span class="st">"BigX.csv"</span>, header <span class="op">=</span> <span class="cn">T</span><span class="op">)</span>
-<span class="op">}</span></code></pre></div>
+<span class="op">}</span>
+<span class="co">#&gt; Reading data from file, and creating file-backed big.matrix...</span>
+<span class="co">#&gt; This should take a while if the data is very large...</span>
+<span class="co">#&gt; Start time:  2021-01-08 17:38:42 </span>
+<span class="co">#&gt; End time:  2021-01-08 17:39:53 </span>
+<span class="co">#&gt; DONE!</span>
+<span class="co">#&gt; </span>
+<span class="co">#&gt; Note: This function needs to be called only one time to create two backing</span>
+<span class="co">#&gt;       files (.bin, .desc) in current dir. Once done, the data can be</span>
+<span class="co">#&gt;       'loaded' using function 'attach.big.matrix'. See details in doc.</span></code></pre></div>
 <p>It’s important to note that the above operation is just one-time execution. Once done, the data can always be retrieved seamlessly by attaching its descriptor file (.desc) in any new R session:</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/rm.html">rm</a></span><span class="op">(</span>list <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"X"</span>, <span class="st">"X.bm"</span>, <span class="st">"y"</span><span class="op">)</span><span class="op">)</span> <span class="co"># Pretend starting a new session</span>
