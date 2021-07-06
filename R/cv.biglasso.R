@@ -14,6 +14,7 @@
 #' @param X The design matrix, without an intercept, as in
 #' \code{\link{biglasso}}.
 #' @param y The response vector, as in \code{biglasso}.
+#' @param offset Optional offset vector. Only implemented for \code{family="cox"} models.
 #' @param row.idx The integer vector of row indices of \code{X} that used for
 #' fitting the model. as in \code{biglasso}.
 #' @param family Either \code{"gaussian"}, \code{"binomial"}, \code{"cox"} or
@@ -77,7 +78,7 @@
 #' 
 #' @export cv.biglasso
 #' 
-cv.biglasso <- function(X, y, row.idx = 1:nrow(X), 
+cv.biglasso <- function(X, y, offset = NULL, row.idx = 1:nrow(X), 
                         family = c("gaussian", "binomial", "cox", "mgaussian"),
                         eval.metric = c("default", "MAPE"),
                         grouped = TRUE,
@@ -97,7 +98,7 @@ cv.biglasso <- function(X, y, row.idx = 1:nrow(X),
     ncores = max.cores
   }
   
-  fit <- biglasso(X = X, y = y, row.idx = row.idx, family = family, ncores = ncores, ...)
+  fit <- biglasso(X = X, y = y, offset = offset, row.idx = row.idx, family = family, ncores = ncores, ...)
   n <- fit$n
   if (fit$family == "cox") {
     E <- matrix(NA, nrow=nfolds, ncol=length(fit$lambda))
@@ -131,7 +132,7 @@ cv.biglasso <- function(X, y, row.idx = 1:nrow(X),
   cv.args <- list(...)
   cv.args$lambda <- fit$lambda
   cv.args$family <- fit$family # I think omitting this may have been a bug?
-
+  
   parallel <- FALSE
   if (ncores > 1) {
     cluster <- parallel::makeCluster(ncores)
@@ -153,7 +154,7 @@ cv.biglasso <- function(X, y, row.idx = 1:nrow(X),
       # source("~/GitHub/biglasso/R/loss.R")
     })
     fold.results <- parallel::parLapply(cl = cluster, X = 1:nfolds, fun = cvf, XX = xdesc, 
-                                        y = y, eval.metric = eval.metric, 
+                                        y = y, offset = offset, eval.metric = eval.metric, 
                                         cv.ind = cv.ind, cv.args = cv.args, 
                                         grouped = grouped,
                                         parallel = parallel)
@@ -165,7 +166,7 @@ cv.biglasso <- function(X, y, row.idx = 1:nrow(X),
       res <- fold.results[[i]]
     } else {
       if (trace) cat("Starting CV fold #", i, sep="", "\n")
-      res <- cvf(i, X, y, eval.metric, cv.ind, cv.args, grouped)
+      res <- cvf(i, X, y, offset, eval.metric, cv.ind, cv.args, grouped)
     }
     
     if (fit$family=="cox") {
@@ -205,7 +206,7 @@ cv.biglasso <- function(X, y, row.idx = 1:nrow(X),
   if (fit$family=="cox") {
     ## NOTE: Do I need to calculate the entire deviance again? Can I just pass some of the 
     # results through from the cvf() call or calculate from the first call of biglasso?
-    val$null.dev <- cox.deviance(X, y, fit$beta, 1:nrow(y))$nulldev
+    val$null.dev <- cox.deviance(X = X, y = y, offset = offset, beta = fit$beta, row.idx = 1:nrow(y))$nulldev
   } else {
     val$null.dev <- mean(loss.biglasso(y, rep(mean(y), n), 
                                        fit$family, eval.metric = eval.metric))
@@ -219,7 +220,7 @@ cv.biglasso <- function(X, y, row.idx = 1:nrow(X),
   structure(val, class=c("cv.biglasso", "cv.ncvreg"))
 }
 
-cvf <- function(i, XX, y, eval.metric, cv.ind, cv.args, grouped, parallel=FALSE) {
+cvf <- function(i, XX, y, offset, eval.metric, cv.ind, cv.args, grouped, parallel=FALSE) {
   # reference to the big.matrix by descriptor info
   if (parallel) {
     XX <- attach.big.matrix(XX)
@@ -227,6 +228,7 @@ cvf <- function(i, XX, y, eval.metric, cv.ind, cv.args, grouped, parallel=FALSE)
   
   cv.args$X <- XX
   cv.args$y <- y
+  cv.args$offset <- offset
   cv.args$row.idx <- which(cv.ind != i)
   cv.args$warn <- FALSE
   cv.args$ncores <- 1
@@ -245,11 +247,11 @@ cvf <- function(i, XX, y, eval.metric, cv.ind, cv.args, grouped, parallel=FALSE)
     ##
     wt <- sum(y[idx.test, 2]) # NOTE: If all obs. are censored in a test set then this will lead to a div by zero
     if (grouped) { # "V&VH cross-validation error" (default setting in glmnet)
-      plfull   <- cox.deviance(X = XX, y = y, beta = fit.i$beta, row.idx = 1:nrow(y))
-      plminusk <- cox.deviance(X = XX, y = y, beta = fit.i$beta, row.idx = which(cv.ind != i))
+      plfull   <- cox.deviance(X = XX, y = y, offset = offset, beta = fit.i$beta, row.idx = 1:nrow(y))
+      plminusk <- cox.deviance(X = XX, y = y, offset = offset, beta = fit.i$beta, row.idx = which(cv.ind != i))
       loss <- (plfull$dev - plminusk$dev)/wt
     } else { # "basic cross-validation error" (alternative setting in glmnet)
-      plk <- cox.deviance(X = XX, y = y, beta = fit.i$beta, row.idx = idx.test)
+      plk <- cox.deviance(X = XX, y = y, offset = offset, beta = fit.i$beta, row.idx = idx.test)
       loss <- plk$dev/wt
     }
     

@@ -32,6 +32,9 @@
 #'  and '0' indicating right censored. For \code{family="mgaussin"}, \code{y}
 #'  should be a n*m matrix where n is the sample size and m is the number of
 #'  responses.
+#' @param offset A vector of length \code{nrow(X)} that is included in the linear predictor. 
+#' Only implemented for \code{family="cox"} models and not currently implemented in 
+#' the \code{predict} function.
 #' @param row.idx The integer vector of row indices of \code{X} that used for
 #' fitting the model. \code{1:nrow(X)} by default.
 #' @param penalty The penalty to be applied to the model. Either \code{"lasso"}
@@ -192,7 +195,7 @@
 #' plot(fit, main = "mgaussian")
 #' 
 #' @export biglasso
-biglasso <- function(X, y, row.idx = 1:nrow(X),
+biglasso <- function(X, y, offset = NULL, row.idx = 1:nrow(X), 
                      penalty = c("lasso", "ridge", "enet"),
                      family = c("gaussian", "binomial", "cox", "mgaussian"), 
                      alg.logistic = c("Newton", "MM"),
@@ -228,6 +231,9 @@ biglasso <- function(X, y, row.idx = 1:nrow(X),
       screen = "Adaptive"
     }
   }
+  
+  if (is.null(offset)) offset <- as.double(rep(0, nrow(X)))
+  offset <- offset[row.idx]
   
 
   family <- match.arg(family)
@@ -452,7 +458,7 @@ biglasso <- function(X, y, row.idx = 1:nrow(X),
   } else if (family == "cox") {
     time <- system.time(
       if (screen == 'SSR') {
-        res <- .Call("cdfit_cox_ssr", X@address, yy, d, as.integer(d_idx-1),
+        res <- .Call("cdfit_cox_ssr", X@address, yy, d, as.integer(d_idx-1), offset[tOrder[row.idx.cox]], # OFFSET
                      as.integer(row.idx[tOrder[row.idx.cox]]-1), lambda,
                      as.integer(nlambda), as.integer(lambda.log.scale),lambda.min,
                      alpha, as.integer(user.lambda | any(penalty.factor==0)),

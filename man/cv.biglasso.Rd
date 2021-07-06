@@ -7,6 +7,7 @@
 cv.biglasso(
   X,
   y,
+  offset = NULL,
   row.idx = 1:nrow(X),
   family = c("gaussian", "binomial", "cox", "mgaussian"),
   eval.metric = c("default", "MAPE"),
@@ -24,6 +25,8 @@ cv.biglasso(
 \code{\link{biglasso}}.}
 
 \item{y}{The response vector, as in \code{biglasso}.}
+
+\item{offset}{Optional offset vector. Only implemented for \code{family="cox"} models.}
 
 \item{row.idx}{The integer vector of row indices of \code{X} that used for
 fitting the model. as in \code{biglasso}.}

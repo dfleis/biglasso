@@ -314,3 +314,4 @@ rownames(D) <- c("ll0", "ll1", "ll2", "ll3", "ll.gn", "cox.dev")
 # ll3$ll_null
 # ll.gn$ll_null
 D
+

@@ -28,7 +28,7 @@ extern SEXP cdfit_cox(SEXP X_, SEXP y_, SEXP d_, SEXP d_idx_, SEXP row_idx_,
                       SEXP max_iter_, SEXP multiplier_, SEXP dfmax_, 
                       SEXP ncore_, SEXP warn_, SEXP verbose_);
 
-extern SEXP cdfit_cox_ssr(SEXP X_, SEXP y_, SEXP d_, SEXP d_idx_, SEXP row_idx_, 
+extern SEXP cdfit_cox_ssr(SEXP X_, SEXP y_, SEXP d_, SEXP d_idx_, SEXP offset_, SEXP row_idx_, // OFFSET
                           SEXP lambda_, SEXP nlambda_, SEXP lam_scale_,
                           SEXP lambda_min_, SEXP alpha_, SEXP user_, SEXP eps_, 
                           SEXP max_iter_, SEXP multiplier_, SEXP dfmax_, 
@@ -115,15 +115,15 @@ extern SEXP cdfit_gaussian_bedpp_ssr(SEXP X_, SEXP y_, SEXP row_idx_,
 
 extern SEXP _biglasso_get_eta(SEXP xPSEXP, SEXP row_idx_SEXP, SEXP betaSEXP, SEXP idx_pSEXP, SEXP idx_lSEXP);
 
-extern SEXP _biglasso_loglik_cox(SEXP xPSEXP, SEXP row_idx_SEXP, 
+extern SEXP _biglasso_loglik_cox(SEXP xPSEXP, SEXP offset_SEXP, SEXP row_idx_SEXP, 
                                  SEXP betaSEXP, SEXP idx_pSEXP, SEXP idx_lSEXP, 
-                                 SEXP D_R_setsSEXP, SEXP d_SEXP);
+                                 SEXP D_dR_setsSEXP, SEXP d_SEXP);
 
 static R_CallMethodDef callMethods[] = {
   {"cdfit_mgaussian_ssr", (DL_FUNC) &cdfit_mgaussian_ssr, 15},
   {"cdfit_mgaussian_ada", (DL_FUNC) &cdfit_mgaussian_ada, 17},
   {"cdfit_cox", (DL_FUNC) &cdfit_cox, 18},
-  {"cdfit_cox_ssr", (DL_FUNC) &cdfit_cox_ssr, 18},
+  {"cdfit_cox_ssr", (DL_FUNC) &cdfit_cox_ssr, 19},
   {"cdfit_cox_scox", (DL_FUNC) &cdfit_cox_scox, 19},
   {"cdfit_cox_sscox", (DL_FUNC) &cdfit_cox_sscox, 19},
   {"cdfit_cox_ada_scox", (DL_FUNC) &cdfit_cox_ada_scox, 20},
@@ -136,7 +136,7 @@ static R_CallMethodDef callMethods[] = {
   {"cdfit_gaussian_ssr", (DL_FUNC) &cdfit_gaussian_ssr, 15},
   {"cdfit_gaussian_bedpp_ssr", (DL_FUNC) &cdfit_gaussian_bedpp_ssr, 16},
   {"_biglasso_get_eta", (DL_FUNC) &_biglasso_get_eta, 5},
-  {"_biglasso_loglik_cox", (DL_FUNC) &_biglasso_loglik_cox, 7},
+  {"_biglasso_loglik_cox", (DL_FUNC) &_biglasso_loglik_cox, 8},
   {NULL, NULL, 0}
 };
 

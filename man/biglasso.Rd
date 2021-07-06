@@ -7,6 +7,7 @@
 biglasso(
   X,
   y,
+  offset = NULL,
   row.idx = 1:nrow(X),
   penalty = c("lasso", "ridge", "enet"),
   family = c("gaussian", "binomial", "cox", "mgaussian"),
@@ -42,6 +43,10 @@ For \code{family="cox"}, \code{y} should be a two-column matrix with columns
  and '0' indicating right censored. For \code{family="mgaussin"}, \code{y}
  should be a n*m matrix where n is the sample size and m is the number of
  responses.}
+
+\item{offset}{A vector of length \code{nrow(X)} that is included in the linear predictor. 
+Only implemented for \code{family="cox"} models and not currently implemented in 
+the \code{predict} function.}
 
 \item{row.idx}{The integer vector of row indices of \code{X} that used for
 fitting the model. \code{1:nrow(X)} by default.}

@@ -673,7 +673,7 @@ RcppExport SEXP cdfit_cox(SEXP X_, SEXP y_, SEXP d_, SEXP d_idx_, SEXP row_idx_,
 }
 
 // Coordinate descent for cox models with SSR
-RcppExport SEXP cdfit_cox_ssr(SEXP X_, SEXP y_, SEXP d_, SEXP d_idx_, SEXP row_idx_, 
+RcppExport SEXP cdfit_cox_ssr(SEXP X_, SEXP y_, SEXP d_, SEXP d_idx_, SEXP offset_, SEXP row_idx_,
                               SEXP lambda_, SEXP nlambda_, SEXP lam_scale_,
                               SEXP lambda_min_, SEXP alpha_, SEXP user_, SEXP eps_, 
                               SEXP max_iter_, SEXP multiplier_, SEXP dfmax_, 
@@ -682,6 +682,7 @@ RcppExport SEXP cdfit_cox_ssr(SEXP X_, SEXP y_, SEXP d_, SEXP d_idx_, SEXP row_i
   double *y = REAL(y_); // Failure indicator for subjects
   double *d = REAL(d_); // Number of failure at unique failure times
   int *d_idx = INTEGER(d_idx_); // Index of unique failure time for subjects with failure; Index of the last unique failure time if censored
+  double *offset = REAL(offset_);
   int *row_idx = INTEGER(row_idx_);
   double lambda_min = REAL(lambda_min_)[0];
   double alpha = REAL(alpha_)[0];
@@ -758,7 +759,7 @@ RcppExport SEXP cdfit_cox_ssr(SEXP X_, SEXP y_, SEXP d_, SEXP d_idx_, SEXP row_i
   double max_update, update, thresh; // for convergence check
   int i, j, jj, k, l, violations, lstart;
   for(j = 0; j < p; j++) e1[j] = 0;
-  for(i = 0; i < n; i++) eta[i] = 0;
+  for(i = 0; i < n; i++) eta[i] = offset[i]; // offset
   double sumWResid = 0.0; //sum w*r
   
   double nullDev = 0;

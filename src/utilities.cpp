@@ -459,7 +459,7 @@ RcppExport SEXP standardize_bm(SEXP xP, SEXP row_idx_) {
     NumericVector c(ncol);
     NumericVector s(ncol);
     IntegerVector row_idx(row_idx_);
-    int nrow = row_idx.size();
+    int nrow = rowNumericVec_idx.size();
     
     for (int j = 0; j < ncol; j++) {
       c[j] = 0; //center
@@ -488,6 +488,8 @@ RcppExport SEXP get_eta(SEXP xP, SEXP row_idx_, SEXP beta, SEXP idx_p, SEXP idx_
     Rcpp::RNGScope __rngScope;
     XPtr<BigMatrix> xpMat(xP); //convert to big.matrix pointer;
     MatrixAccessor<double> xAcc(*xpMat);
+    
+    
     
     // sparse matrix for beta: only pass the non-zero entries and their indices;
     arma::sp_mat sp_beta = Rcpp::as<arma::sp_mat>(beta);
@@ -520,12 +522,18 @@ RcppExport SEXP get_eta(SEXP xP, SEXP row_idx_, SEXP beta, SEXP idx_p, SEXP idx_
 }
 
 // internal equivalent to the get_eta function
-arma::mat get_eta2(MatrixAccessor<double> xAcc, IntegerVector row_idx, IntegerVector set_idx, 
-                   arma::sp_mat sp_beta, IntegerVector index_p, IntegerVector index_l, 
-                   int n, int l, int nnz) {
+arma::mat get_eta_(MatrixAccessor<double> xAcc, NumericVector offset, IntegerVector row_idx, 
+                   IntegerVector set_idx, arma::sp_mat sp_beta, IntegerVector index_p, 
+                   IntegerVector index_l, int n, int l, int nnz) {
   // initialize result 
   arma::mat res = arma::zeros(n, l);
 
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < l; j++) {
+      res(i, j) = offset[row_idx[set_idx[i]]];
+    }  
+  }
+  
   for (int k = 0; k < nnz; k++) {
     for (int i = 0; i < n; i++) {
       //double x = (xAcc[index_p[k]][row_idx[i]] - center[index_p[k]]) / scale[index_p[k]];
@@ -549,7 +557,8 @@ arma::mat colsum(MatrixAccessor<double> xAcc, IntegerVector row_idx, IntegerVect
 }
 
 // [[Rcpp::export]]
-SEXP loglik_cox(SEXP xP, SEXP row_idx_, SEXP beta, SEXP idx_p, SEXP idx_l, SEXP D_R_sets_, SEXP d_) {
+SEXP loglik_cox(SEXP xP, SEXP offset_, SEXP row_idx_, SEXP beta, 
+                SEXP idx_p, SEXP idx_l, SEXP D_dR_sets_, SEXP d_) {
   // I'm not sure what the commented code below does, so I have left it out (for now)
   // BEGIN_RCPP
   // SEXP __sexp_result;
@@ -558,41 +567,46 @@ SEXP loglik_cox(SEXP xP, SEXP row_idx_, SEXP beta, SEXP idx_p, SEXP idx_l, SEXP 
     XPtr<BigMatrix> xpMat(xP); //convert to big.matrix pointer;
     MatrixAccessor<double> xAcc(*xpMat);
     
-    arma::sp_mat sp_beta = Rcpp::as<arma::sp_mat>(beta);
-    
+    NumericVector offset(offset_); 
     IntegerVector row_idx(row_idx_);
     IntegerVector index_p(idx_p);
     IntegerVector index_l(idx_l);
-    
     int *d = INTEGER(d_);
-  
-    Rcpp::List D_R_sets(D_R_sets_);
-    Rcpp::List DRs(2);
-    Rcpp::IntegerVector Dsetj;
-    Rcpp::IntegerVector dRsetj;
+    Rcpp::List D_dR_sets(D_dR_sets_);
+    Rcpp::List DdRset(2);
+    Rcpp::IntegerVector Dset;
+    Rcpp::IntegerVector dRset;
+    
+    arma::sp_mat sp_beta = Rcpp::as<arma::sp_mat>(beta);
+
     int dj;
     
-    int nd = D_R_sets.size(); // number of unique failure times
-    
+    int nd    = D_dR_sets.size(); // number of unique failure times
     int nvars = sp_beta.n_rows;
     int l     = sp_beta.n_cols;
     int nnz   = index_p.size();
     
-    arma::mat term1 = arma::mat(1, l);
-    arma::mat expXRbeta_colsum = arma::zeros(1, l); // cumulative sum
-    arma::mat term2 = arma::mat(1, l);
+    arma::mat term1  = arma::mat(1, l);
+    arma::mat expXRbeta_colsum = arma::zeros(1, l); // cumulative sum of the dR set exp(eta)'s
+    arma::mat term2  = arma::mat(1, l);
     arma::mat ll_sum = arma::zeros(1, l);
     
-    for (int j = nd - 1; j >= 0; j--) { 
-      DRs    = D_R_sets[j];
-      Dsetj  = DRs["Dj"];
-      dRsetj = DRs["dRj"];
+    for (int j = nd - 1; j >= 0; j--) {
+      DdRset = D_dR_sets[j];
+      Dset   = DdRset["D"];
+      dRset  = DdRset["dR"];
       dj     = *(d + j);
+      
+      term1 = colsum(xAcc, row_idx, Dset, nvars) * sp_beta;
+      for (int k = 0; k < Dset.size(); k++) {
+        term1 += offset[row_idx[Dset[k]]];
+      }
 
-      term1 = colsum(xAcc, row_idx, Dsetj, nvars) * sp_beta;
       expXRbeta_colsum += 
-        arma::sum(exp(get_eta2(xAcc, row_idx, dRsetj, sp_beta, index_p, index_l, dRsetj.size(), l, nnz)), 0);
-      term2 = dj * log(expXRbeta_colsum); 
+        arma::sum(exp(
+            get_eta_(xAcc, offset, row_idx, dRset, sp_beta, index_p, index_l, dRset.size(), l, nnz)
+        ), 0);
+      term2 = dj * log(expXRbeta_colsum);
       
       ll_sum += term1 - term2;
     }

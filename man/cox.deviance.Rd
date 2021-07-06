@@ -4,7 +4,7 @@
 \alias{cox.deviance}
 \title{deviance and log-likelihood calculations for fitted Cox models}
 \usage{
-cox.deviance(X, y, beta, row.idx)
+cox.deviance(X, y, offset = NULL, beta, row.idx = 1:nrow(X))
 }
 \arguments{
 \item{X}{The design matrix, without an intercept. It must be a
@@ -12,9 +12,14 @@ double type \code{\link[bigmemory]{big.matrix}} object.}
 
 \item{y}{A response vector.}
 
-\item{beta}{Fitted coefficients obtained from a \code{\link[biglasso]{biglasso}} object.}
+\item{offset}{Optional offset vector.}
 
-\item{row.idx}{Integer vector of row/observation indices to be used in computing model likelihoods.}
+\item{beta}{Fitted coefficients obtained from a \code{\link[biglasso]{biglasso}} object. Expected to be 
+a matrix (or something coercible to a \code{"dgTMatrix"} object) with ncols corresponding to the number
+of lambdas used in the penalization path and nrows corresponding to the number of model covariates.}
+
+\item{row.idx}{Integer vector of row/observation indices to be used in computing model likelihoods.
+Default set to \code{1:nrow(X)}.}
 }
 \value{
 A list with deviance and log-likelihood values calculated over the fitted coefficients.

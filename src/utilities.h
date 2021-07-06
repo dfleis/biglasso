@@ -132,9 +132,9 @@ void update_zj(vector<double> &z,
                NumericVector &center, NumericVector &scale, 
                double sumResid, double *r, double *m, int n, int p);
 
-arma::mat get_eta2(MatrixAccessor<double> xAcc, IntegerVector row_idx, IntegerVector set_idx,
-                   arma::sp_mat sp_beta, IntegerVector index_p, IntegerVector index_l, 
-                   int n, int l, int nnz);
+arma::mat get_eta_(MatrixAccessor<double> xAcc, NumericVector offset, IntegerVector row_idx, 
+                   IntegerVector set_idx, arma::sp_mat sp_beta, IntegerVector index_p,
+                   IntegerVector index_l, int n, int l, int nnz);
 
 arma::mat colsum(MatrixAccessor<double> xAcc, IntegerVector row_idx, IntegerVector set_idx, int ncols);
 

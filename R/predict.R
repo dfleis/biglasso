@@ -75,7 +75,7 @@ predict.biglasso <- function(object, X, row.idx = 1:nrow(X),
   if (!inherits(X, 'big.matrix')) {
     stop("X must be a big.matrix object.")
   }
- 
+
   beta.T <- as(beta, "dgTMatrix") 
   temp <- get_eta(X@address, as.integer(row.idx-1), beta, beta.T@i, beta.T@j)
   if(object$family != "cox") eta <- sweep(temp, 2, alpha, "+")
