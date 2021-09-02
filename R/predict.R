@@ -79,6 +79,7 @@ predict.biglasso <- function(object, X, row.idx = 1:nrow(X),
   beta.T <- as(beta, "dgTMatrix") 
   temp <- get_eta(X@address, as.integer(row.idx-1), beta, beta.T@i, beta.T@j)
   if(object$family != "cox") eta <- sweep(temp, 2, alpha, "+")
+  if(object$family == "cox") eta <- temp
   # dimnames(eta) <- list(c(1:nrow(eta)), round(object$lambda, digits = 4))
   
   if (object$family != 'binomial') {

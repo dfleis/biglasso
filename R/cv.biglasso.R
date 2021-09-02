@@ -202,7 +202,7 @@ cv.biglasso <- function(X, y, offset = NULL, row.idx = 1:nrow(X),
   val <- list(cve=cve, cvse=cvse, lambda=lambda, fit=fit, min=min, lambda.min=lambda[min],
               cve.1se = cve.1se, lambda.1se = lambda.1se,
               cv.ind = cv.ind,
-              eval.metric = eval.metric)
+              eval.metric = eval.metric, family=fit$family)
   if (fit$family=="cox") {
     ## NOTE: Do I need to calculate the entire deviance again? Can I just pass some of the 
     # results through from the cvf() call or calculate from the first call of biglasso?
